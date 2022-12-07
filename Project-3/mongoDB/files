@@ -1,1 +1,176 @@
 
+
+// exercise 1 :
+db.death.aggregate([
+         { $addFields: {
+           date_work: {
+             $dateFromString: {
+               dateString: "$Date",
+                 format: "%m/%d/%Y"
+             }
+           }
+         }},
+           { $match: { "date_work": { $gt: ISODate("2012-01-01"), $lt:ISODate("2018-01-01") },"Death State" : "CT","Manner of Death": "Accident"}
+
+           },
+
+           ])
+
+// exercise 3 :
+
+
+///  1) find  sex number
+
+var mapFunc = function() {
+    var value = {countMale: 1, countFemale: 1};
+    var key = this.Sex;
+    emit(key, value);
+}
+var redFunc = function (key,values) {
+    counterVal1 = {countMale: 0};
+    counterVal2 = {countFemale: 0};
+    for (var id = 0; id < values.length; id++) {
+        if (values[id] == 'Male') {
+            counterVal1.countMale += values[id].countMale;
+        } else {
+        counterVal2.countFemale += values[id].countFemale;}
+        } return counterVal1, counterVal2;}
+
+db.death.mapReduce(mapFunc,redFunc,{out:"male_female"})
+db.male_female.find()
+
+
+/// 2)  average age for disease use death1 collection
+
+var map_sexe_disease= function() {
+    var value = this.Age;
+    var key = this.Cause_of_Death;
+    emit(key, value);
+}
+var red_sexe_disease = function(key,values)
+{var  age = values.length;
+ var  Cause =Array.sum(values);
+ Average = Cause/age;
+ return Average ;
+}
+
+db.death1.mapReduce(map_sexe_disease,red_sexe_disease,{out:"stocks1"})
+
+/// 3) injury place  according to average age  use death1 collection
+var map_cause= function() {
+    var value = this.Age;
+    var key = this.Injury_Place;
+    emit(key, value);
+}
+var red_scause = function(key,values)
+{var  age = values.length;
+ var  place =Array.sum(values);
+ Average = place/age;
+ return Average ;
+}
+
+db.death1.mapReduce(map_cause,red_scause,{out:"place"})
+
+/// 4)  average age according to description of injury
+var map_cause= function() {
+    var value = this.Age;
+    var key = this.Description_of_Injury;
+    emit(key, value);
+}
+var red_scause = function(key,values)
+{var  age = values.length;
+ var  Cause =Array.sum(values);
+ Average = Cause/age;
+ return Average ;
+}
+
+db.death1.mapReduce(map_cause,red_scause,{out:"Cause"})
+
+
+/// 5)  average age according to Race , using death3 collection
+var map_cause= function() {
+    var value = this.Age;
+    var key = this.Race;
+    emit(key, value);
+}
+var red_scause = function(key,values){
+var  total = 0;
+var  avg =0;
+for (var i = 0; i < values.length; i++){
+                total += values[i];
+            }
+avg = total/values.length
+            return avg;
+        }
+
+
+db.death3.mapReduce(map_cause,red_scause,{out:"Race1"})
+
+
+/// 6) Number of sex according to Race
+
+
+
+/// 7 ) Location death on  fentanyl use
+var mapper3_2 = function(){
+                emit(this.Injury_City,1);
+            }
+var reducer =
+            function(key, values){
+                var total = 0;
+                for (var i = 0; i < values.length; i++){
+                    total += values[i];
+                }
+                return total;
+            }
+
+// pymongo run
+result3_2 = collection.map_reduce(
+mapper3_2, reducer, "myresults3_2",
+query = {"Fentanyl":"Y"})
+for doc in result3_2.find(): pprint.pprint(doc)
+
+
+/// 8 ) the number of death according  to fentanyl overuse
+
+var mapper1 =
+            function() {
+                emit(this.Fentanyl, 1);
+            }
+
+var Red = function(key, values){
+                var total = 0;
+                for (var i = 0; i < values.length; i++){
+                    total += values[i];
+                }
+                return total;
+            }
+
+db.death3.mapReduce(map_cause,red_scause,{out:"Fentanyl"})
+
+
+
+/// 9 )  the average age of deaths based on the cause and total number of death  ///
+
+var map =
+    function(){
+        emit(this.Cause_of_Death,this.Age);
+    }
+var Red=
+    function(key, values){
+        var total_age = 0;
+        var total_num = 0
+        var avg = 0;
+        var l = [];
+        for (var i = 0; i < values.length; i++){
+            total_age += values[i];
+            total_num +=1;
+        }
+        avg = total_age/values.length;
+        l.push(total_num,avg);
+        return l;
+    }
+db.death3.mapReduce(map_cause,red_scause,{out:"3_variables"})
+
+
+
